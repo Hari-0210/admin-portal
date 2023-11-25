@@ -27,11 +27,12 @@ import { Controller, useForm } from 'react-hook-form';
 import EditIcon from '@mui/icons-material/Edit';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { Textfield } from '../utils/formLib';
 import { useSnackbar } from '../utils/CommonSnack';
 import { fetchProducts, uploadImageApi } from '../slices/product';
-import { getUserDetails, makeColumn, makePayload } from '../utils/utility';
+import { getUserDetails, makePayload } from '../utils/utility';
 import MuiTable from '../components/table/Table';
 import GenericDialog from '../components/Dialog';
 import Fields from '../components/Field';
@@ -131,7 +132,20 @@ function ProductsPage(props) {
     getCategory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const col = makeColumn(products);
+  const col = [
+    {
+      accessorKey: 'name',
+      header: 'Product Name',
+    },
+    {
+      accessorKey: 'sellingPrice',
+      header: 'Selling Price',
+    },
+    {
+      accessorKey: 'qty',
+      header: 'Quantity',
+    },
+  ];
   const data = products;
 
   const handleOpenMenu = (event, attributeKey, attributeValue) => {
@@ -270,7 +284,7 @@ function ProductsPage(props) {
       setLoading(false);
       console.error('API Error:', error);
       showSnackbar(error.message, 'error');
-      return Promise.reject();
+      return Promise.reject(new Error('Something went wrong'));
     }
   };
   function calculateOptions(variable) {
@@ -314,7 +328,6 @@ function ProductsPage(props) {
       .unwrap()
       .then((data) => {
         setImg([{ ...data.data }]);
-        console.log([{ ...data.data }]);
         showSnackbar(data.message, 'success');
       })
       .catch((e) => {
@@ -322,6 +335,24 @@ function ProductsPage(props) {
         showSnackbar(e.message, 'error');
       });
   };
+  function generateCombinationsHelper(combinations, index, currentCombination, resultCombinations) {
+    if (index === combinations.length) {
+      resultCombinations.push(currentCombination.join(', '));
+      return;
+    }
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const element of combinations[index]) {
+      generateCombinationsHelper(combinations, index + 1, [...currentCombination, element], resultCombinations);
+    }
+  }
+
+  function generateCombinationsSub(combinations) {
+    const resultCombinations = [];
+    generateCombinationsHelper(combinations, 0, [], resultCombinations);
+    return resultCombinations;
+  }
+
   function generateCombinations(attributeData) {
     const combinations = [];
 
@@ -333,26 +364,7 @@ function ProductsPage(props) {
       combinations.push(attributeCombinations);
     });
 
-    // Combine combinations when there are multiple attributes
-    let resultCombinations = [];
-    // eslint-disable-next-line no-plusplus
-    for (let i = 0; i < combinations.length; i++) {
-      const current = combinations[i];
-
-      if (resultCombinations.length === 0) {
-        resultCombinations = current;
-      } else {
-        const combined = [];
-        // eslint-disable-next-line no-plusplus
-        for (let j = 0; j < resultCombinations.length; j++) {
-          // eslint-disable-next-line no-plusplus
-          for (let k = 0; k < current.length; k++) {
-            combined.push(`${resultCombinations[j]}, ${current[k]}`);
-          }
-        }
-        resultCombinations = combined;
-      }
-    }
+    const resultCombinations = generateCombinationsSub(combinations);
 
     return resultCombinations;
   }
@@ -380,9 +392,11 @@ function ProductsPage(props) {
         </Container>
       ) : (
         <Container>
-          <Typography variant="h4" sx={{ mb: 5 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>
+            <ArrowBackIcon onClick={() => setShowForm(false)} sx={{ mr: '8px', mt: '5px' }} />
             {isEdit ? 'Update' : 'Add'} Product
           </Typography>
+
           <form onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={2}>
               {productField.fields.map((field, i) => (
@@ -662,7 +676,7 @@ function ProductsPage(props) {
             type={'DELETE'}
           />
           <Grid container spacing={2}>
-            <Grid item xs={12} container justifyContent="center">
+            <Grid item xs={12} container justifyContent="center" mt={3}>
               <Button variant="contained" style={{ marginRight: 10 }} onClick={handleSubmit(onSubmit)}>
                 {isEdit ? 'Update' : 'Save'}
               </Button>
