@@ -146,6 +146,7 @@ function Form({ sectionName, sectionData, setLoading }) {
           </form>
         }
       />
+
       <Grid item xs={12}>
         <MuiTable columns={col} data={data} actions={actions} add handleAdd={handleAdd} />
       </Grid>

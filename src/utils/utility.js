@@ -1,3 +1,4 @@
+import moment from 'moment';
 import pageData from './pages.json';
 
 export function getUserDetails() {
@@ -9,6 +10,7 @@ export function makeColumn(arr) {
     ? Object.keys(arr?.[0])
         .filter((key) => typeof arr[0]?.[key] === 'string')
         .filter((key) => arr[0][key] != null)
+        .filter((key) => key !== 'description')
         .map((key) => ({
           accessorKey: key,
           header: key?.charAt(0).toUpperCase() + key?.slice(1),
@@ -23,7 +25,7 @@ export function makePayload(sectionName, method, data, operation) {
       data: [
         ...pageData[sectionName].fields.map((e) => ({
           key: e.name,
-          value: data[e.name],
+          value: e.type === 'date' ? moment(`${data[e.name]}`).format('DD/MM/YYYY') : data[e.name],
         })),
         {
           key: 'storeid',

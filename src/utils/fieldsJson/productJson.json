@@ -71,6 +71,48 @@
       "required": true,
       "xs": 12,
       "sm": 12
+    },
+    {
+      "name": "features",
+      "type": "radio",
+      "label": "Features",
+      "variant": "outlined",
+      "fullWidth": true,
+      "required": true,
+      "xs": 12,
+      "sm": 4,
+      "options": [
+        { "label": "True", "value": "true" },
+        { "label": "False", "value": "false" }
+      ]
+    },
+    {
+      "name": "topSelling",
+      "type": "radio",
+      "label": "Top Selling",
+      "variant": "outlined",
+      "fullWidth": true,
+      "required": true,
+      "xs": 12,
+      "sm": 4,
+      "options": [
+        { "label": "True", "value": "true" },
+        { "label": "False", "value": "false" }
+      ]
+    },
+    {
+      "name": "isNewProduct",
+      "type": "radio",
+      "label": "Is New Product",
+      "variant": "outlined",
+      "fullWidth": true,
+      "required": true,
+      "xs": 12,
+      "sm": 4,
+      "options": [
+        { "label": "True", "value": "true" },
+        { "label": "False", "value": "false" }
+      ]
     }
   ]
 }

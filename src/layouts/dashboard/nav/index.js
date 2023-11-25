@@ -2,10 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import { useLocation, Link as RouterLink } from 'react-router-dom';
 // @mui
-import { styled, alpha } from '@mui/material/styles';
-import { Box, Link, Drawer, Typography, Avatar } from '@mui/material';
-// mock
-import account from '../../../_mock/account';
+import { Box, Link, Drawer } from '@mui/material';
 // hooks
 import useResponsive from '../../../hooks/useResponsive';
 // components
@@ -18,15 +15,7 @@ import { getUserDetails } from '../../../utils/utility';
 
 // ----------------------------------------------------------------------
 
-const NAV_WIDTH = 280;
-
-const StyledAccount = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(2, 2.5),
-  borderRadius: Number(theme.shape.borderRadius) * 1.5,
-  backgroundColor: alpha(theme.palette.grey[500], 0.12),
-}));
+const NAV_WIDTH = 200;
 
 // ----------------------------------------------------------------------
 
@@ -87,7 +76,8 @@ export default function Nav({ openNav, onCloseNav }) {
           PaperProps={{
             sx: {
               width: NAV_WIDTH,
-              bgcolor: 'background.default',
+              bgcolor: '#cfe2ee',
+              color: '#fff',
               borderRightStyle: 'dashed',
             },
           }}

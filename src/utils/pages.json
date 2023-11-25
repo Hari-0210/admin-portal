@@ -13,5 +13,118 @@
       }
     ],
     "tableName": "categories"
+  },
+  "coupon": {
+    "fields": [
+      {
+        "name": "code",
+        "type": "text",
+        "label": "Coupon Code",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "type",
+        "type": "select",
+        "label": "Type",
+        "variant": "outlined",
+        "fullWidth": true,
+        "options": [
+          { "label": "Percentage", "value": "percentage" },
+          { "label": "Amount", "value": "fixed_amount" }
+        ],
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "value",
+        "type": "text",
+        "label": "Value",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "minimum_purchase",
+        "type": "text",
+        "label": "Minimum Purchase",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "maximum_discount",
+        "type": "text",
+        "label": "Maximum Discount",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "start_date",
+        "type": "date",
+        "label": "Start Date",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "end_date",
+        "type": "date",
+        "label": "End Date",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "usage_limit",
+        "type": "text",
+        "label": "Usage Limit",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "used_count",
+        "type": "text",
+        "label": "Used Count",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4
+      },
+      {
+        "name": "status",
+        "type": "radio",
+        "label": "Status",
+        "variant": "outlined",
+        "fullWidth": true,
+        "required": true,
+        "xs": 12,
+        "sm": 4,
+        "options": [
+          { "label": "True", "value": "active" },
+          { "label": "False", "value": "inactive" }
+        ]
+      }
+    ],
+    "tableName": "coupon"
   }
 }

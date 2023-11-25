@@ -5,6 +5,7 @@ import { getUserDetails } from './utils/utility';
 import fieldData from './utils/pages.json';
 import DynamicPage from './pages/DynamicPage';
 import ProductAddPage from './pages/ProductAddPage';
+import SiteSettings from './pages/SiteSettings';
 
 // Layouts
 const DashboardLayout = lazy(() => import('./layouts/dashboard'));
@@ -33,6 +34,7 @@ export default function Router() {
             { path: 'app', element: <DashboardAppPage /> },
             { path: 'user', element: <UserPage /> },
             { path: 'products', element: <ProductsPage /> },
+            { path: 'settings', element: <SiteSettings /> },
             { path: 'addProducts', element: <ProductAddPage /> },
             { path: 'blog', element: <BlogPage /> },
             ...Object.keys(fieldData).map((sectionName) => ({

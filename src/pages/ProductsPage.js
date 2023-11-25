@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 // @mui
 import {
@@ -8,7 +8,9 @@ import {
   Container,
   Grid,
   IconButton,
+  MenuItem,
   Paper,
+  Popover,
   Stack,
   Table,
   TableBody,
@@ -17,17 +19,18 @@ import {
   TableHead,
   TableRow,
   Typography,
+  styled,
 } from '@mui/material';
 // components
 import { useDispatch } from 'react-redux';
 import { Controller, useForm } from 'react-hook-form';
 import EditIcon from '@mui/icons-material/Edit';
 import AddBoxIcon from '@mui/icons-material/AddBox';
-import { useNavigate } from 'react-router-dom';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { Textfield } from '../utils/formLib';
 import { useSnackbar } from '../utils/CommonSnack';
-import { ProductSort, ProductFilterSidebar } from '../sections/@dashboard/products';
-import { fetchProducts } from '../slices/product';
+import { fetchProducts, uploadImageApi } from '../slices/product';
 import { getUserDetails, makeColumn, makePayload } from '../utils/utility';
 import MuiTable from '../components/table/Table';
 import GenericDialog from '../components/Dialog';
@@ -35,18 +38,36 @@ import Fields from '../components/Field';
 import { IsLoadingHOC } from '../utils/hoc/loader';
 import http from '../utils/http-common';
 import productField from '../utils/fieldsJson/productJson.json';
+import Iconify from '../components/iconify/Iconify';
+
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
 // ----------------------------------------------------------------------
 
 function ProductsPage(props) {
   const { setLoading } = props;
-  const navigate = useNavigate();
-  const [openFilter, setOpenFilter] = useState(false);
   const [products, setProducts] = useState([]);
+  const [img, setImg] = useState([]);
   const [category, setcategory] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+
+  const [isEditAttribute, setIsEditAttribute] = useState(false);
   const [openAttribute, setOpenAttribute] = useState(false);
   const [attributeData, setAttributeData] = useState({});
+  const [open, setOpen] = useState(null);
+  const [editAttribute, setEditAttribute] = useState({});
+  const [editAttributeKey, setEditAttributeKey] = useState({});
+  const [openConfirmation, setOpenConfirmation] = useState(false);
 
   const dispatch = useDispatch();
   const { showSnackbar } = useSnackbar();
@@ -89,13 +110,6 @@ function ProductsPage(props) {
       ...initialValuesAttribute,
     },
   });
-  const handleOpenFilter = () => {
-    setOpenFilter(true);
-  };
-
-  const handleCloseFilter = () => {
-    setOpenFilter(false);
-  };
 
   const getProducts = () => {
     const payload = {
@@ -119,11 +133,26 @@ function ProductsPage(props) {
   }, []);
   const col = makeColumn(products);
   const data = products;
+
+  const handleOpenMenu = (event, attributeKey, attributeValue) => {
+    console.log(attributeKey);
+    console.log(attributeValue);
+    setEditAttributeKey({ key: attributeKey });
+    setEditAttribute({ ...attributeValue });
+    setOpen(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setOpen(null);
+  };
   const handleAdd = () => {
     setShowForm(true);
     setIsEdit(false);
     reset(initialValues);
     resetAttribute(initialValuesAttribute);
+    setAttributeData({});
+    combinations = [];
+    setImg([]);
   };
   const actions = ({ row }) => (
     <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: '8px' }}>
@@ -140,6 +169,52 @@ function ProductsPage(props) {
   const handleEdit = (data) => {
     setIsEdit(true);
     reset(data);
+    const att = data.attributes;
+    const result = Object.keys(att).reduce((acc, key) => {
+      const parts = key.split(', ').map((part) => part.split(' - '));
+
+      parts.forEach((element) => {
+        let property;
+        let value;
+
+        if (element.length === 3) {
+          [, property, value] = element;
+        } else {
+          [property, value] = element;
+        }
+
+        if (property !== 'quantity' && property !== 'sellingPrice') {
+          if (!acc[property]) {
+            acc[property] = [];
+          }
+          if (!acc[property].includes(value)) {
+            acc[property].push(value);
+          }
+        }
+      });
+
+      return acc;
+    }, {});
+    const dynamicArray = Object.entries(result).map(([property, values]) => ({ [property]: values }));
+    const res = dynamicArray.reduce((acc, item, index) => {
+      const key = `attribute ${index + 1}`;
+      const name = Object.keys(item)[0];
+      const options = item[name];
+
+      acc[key] = {
+        attributes: {
+          title: {
+            name,
+            options: options.join(','),
+          },
+        },
+      };
+
+      return acc;
+    }, {});
+    setAttributeData({ ...res });
+    resetAttribute({ ...att });
+    setImg([...data.img].map((e) => ({ path: e })));
     setShowForm(true);
   };
   const getCategory = async () => {
@@ -162,31 +237,41 @@ function ProductsPage(props) {
       showSnackbar(error.message, 'error');
     }
   };
+
   const onSubmit = async (data) => {
-    console.log(getValuesAttribute());
-    return Promise.resolve();
-    // setLoading(true);
-    // const payload = { ...data, storeId: getUserDetails().storeid };
-    // try {
-    //   const response = await http.post('', payload);
-    //   if (response.data.status === 200) {
-    //     setLoading(false);
-    //     showSnackbar(`Product created successfully`, 'success');
-    //     reset(initialValues);
-    //     setIsEdit(false);
-    //     setShowForm(false);
-    //     getProducts();
-    //     return response.data.data;
-    //   }
-    //   setLoading(false);
-    //   showSnackbar(response.data.message, 'error');
-    //   return Promise.resolve();
-    // } catch (error) {
-    //   setLoading(false);
-    //   console.error('API Error:', error);
-    //   showSnackbar(error.message, 'error');
-    //   return Promise.reject();
-    // }
+    const attributes = getValuesAttribute();
+    delete attributes.attributes;
+    setLoading(true);
+    const payload = {
+      ...data,
+      attributes,
+      img: img?.map((e) => e?.path),
+      storeId: getUserDetails().storeid,
+      ...(isEdit && { productId: data.productId }),
+    };
+    try {
+      const response = await http.post(isEdit ? '/product/update' : '/product/add', payload);
+      if (response.data.status === 200) {
+        setLoading(false);
+        showSnackbar(`Product ${isEdit ? 'updated' : 'created'}  successfully`, 'success');
+        reset(initialValues);
+        setIsEdit(false);
+        setShowForm(false);
+        setAttributeData({});
+        getProducts();
+        combinations = [];
+        setImg([]);
+        return response.data.data;
+      }
+      setLoading(false);
+      showSnackbar(response.data.message, 'error');
+      return Promise.resolve();
+    } catch (error) {
+      setLoading(false);
+      console.error('API Error:', error);
+      showSnackbar(error.message, 'error');
+      return Promise.reject();
+    }
   };
   function calculateOptions(variable) {
     switch (variable) {
@@ -200,13 +285,42 @@ function ProductsPage(props) {
     }
   }
   const onSubmitAttribute = async (data) => {
-    const attributeLength = Object.keys(attributeData).length + 1;
-    setAttributeData({
-      ...attributeData,
-      [`attribute ${attributeLength}`]: data,
-    });
+    if (isEditAttribute) {
+      setAttributeData({
+        ...attributeData,
+        [`${editAttributeKey.key}`]: data,
+      });
+    } else {
+      const attributeLength = Object.keys(attributeData).length + 1;
+      setAttributeData({
+        ...attributeData,
+        [`attribute ${attributeLength}`]: data,
+      });
+    }
     setOpenAttribute(false);
     resetAttribute(initialValuesAttribute);
+  };
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      uploadImage(file);
+    }
+  };
+
+  const uploadImage = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    dispatch(uploadImageApi(formData))
+      .unwrap()
+      .then((data) => {
+        setImg([{ ...data.data }]);
+        console.log([{ ...data.data }]);
+        showSnackbar(data.message, 'success');
+      })
+      .catch((e) => {
+        console.log(e);
+        showSnackbar(e.message, 'error');
+      });
   };
   function generateCombinations(attributeData) {
     const combinations = [];
@@ -242,8 +356,10 @@ function ProductsPage(props) {
 
     return resultCombinations;
   }
-  const combinations = generateCombinations(attributeData);
-
+  let combinations = generateCombinations(attributeData);
+  const handleConfirmation = () => {
+    setOpenConfirmation(false);
+  };
   return (
     <>
       <Helmet>
@@ -251,21 +367,16 @@ function ProductsPage(props) {
       </Helmet>
       {!showForm ? (
         <Container>
-          <Typography variant="h4" sx={{ mb: 5 }}>
-            Products
-          </Typography>
-
-          <Stack direction="row" flexWrap="wrap-reverse" alignItems="center" justifyContent="flex-end" sx={{ mb: 5 }}>
-            <Stack direction="row" spacing={1} flexShrink={0} sx={{ my: 1 }}>
-              <ProductFilterSidebar
-                openFilter={openFilter}
-                onOpenFilter={handleOpenFilter}
-                onCloseFilter={handleCloseFilter}
-              />
-              <ProductSort />
-            </Stack>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Typography variant="h4" gutterBottom>
+              Products
+            </Typography>
+            <Button variant="contained" onClick={handleAdd} startIcon={<Iconify icon="eva:plus-fill" />}>
+              New Products
+            </Button>
           </Stack>
-          <MuiTable columns={col} data={data} add handleAdd={handleAdd} actions={actions} />
+
+          <MuiTable columns={col} data={data} actions={actions} />
         </Container>
       ) : (
         <Container>
@@ -322,6 +433,7 @@ function ProductsPage(props) {
                           <TableRow>
                             <TableCell>Title</TableCell>
                             <TableCell>Options</TableCell>
+                            <TableCell>Actions</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -329,6 +441,15 @@ function ProductsPage(props) {
                             <TableRow key={attributeKey}>
                               <TableCell>{attributeValue.attributes.title.name}</TableCell>
                               <TableCell>{attributeValue.attributes.title.options}</TableCell>
+                              <TableCell>
+                                <IconButton
+                                  size="large"
+                                  color="inherit"
+                                  onClick={(e) => handleOpenMenu(e, attributeKey, attributeValue)}
+                                >
+                                  <Iconify icon={'eva:more-vertical-fill'} />
+                                </IconButton>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -355,7 +476,7 @@ function ProductsPage(props) {
                               <TableCell>{combination}</TableCell>
                               <TableCell align="center">
                                 <Controller
-                                  name={`attributes.quantity - ${combination}`}
+                                  name={`quantity - ${combination}`}
                                   control={controlAttribute}
                                   render={({ field }) => (
                                     <Textfield
@@ -371,7 +492,7 @@ function ProductsPage(props) {
                               </TableCell>
                               <TableCell align="center">
                                 <Controller
-                                  name={`attributes.sellingPrice - ${combination}`}
+                                  name={`sellingPrice - ${combination}`}
                                   control={controlAttribute}
                                   render={({ field }) => (
                                     <Textfield
@@ -394,16 +515,60 @@ function ProductsPage(props) {
                 </>
               )}
             </Grid>
+            <Popover
+              open={Boolean(open)}
+              anchorEl={open}
+              onClose={() => {
+                handleCloseMenu();
+              }}
+              anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                sx: {
+                  p: 1,
+                  width: 140,
+                  '& .MuiMenuItem-root': {
+                    px: 1,
+                    typography: 'body2',
+                    borderRadius: 0.75,
+                  },
+                },
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  resetAttribute({ ...editAttribute });
+                  setIsEditAttribute(true);
+                  setOpenAttribute(true);
+                  setOpen(false);
+                }}
+              >
+                <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
+                Edit
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setOpenConfirmation(true);
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
+                Delete
+              </MenuItem>
+            </Popover>
           </form>
           <GenericDialog
             open={openAttribute}
-            title={`Add Attribute`}
+            title={`${isEditAttribute ? 'Update' : 'Add'} Attribute`}
             onClose={() => {
               setOpenAttribute(false);
+              resetAttribute(initialValuesAttribute);
+              setIsEditAttribute(false);
             }}
             maxWidth={'sm'}
             onSubmit={handleSubmitAttribute(onSubmitAttribute)}
-            buttonText={'Submit'}
+            buttonText={`${isEditAttribute ? 'Update' : 'Submit'}`}
             content={
               <form onSubmit={handleSubmitAttribute(onSubmitAttribute)}>
                 <Grid container spacing={2}>
@@ -461,10 +626,45 @@ function ProductsPage(props) {
               </form>
             }
           />
+          <Typography sx={{ mb: 2, mt: 2 }}>Product Images</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} container>
+              <Button component="label" variant="contained" startIcon={<CloudUploadIcon />}>
+                Upload Img
+                <VisuallyHiddenInput type="file" onChange={handleFileChange} />
+              </Button>
+            </Grid>
+            {img.length ? (
+              <Grid item xs={4} container>
+                <div
+                  style={{
+                    maxWidth: '100%',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  <img
+                    src={`https://hungry-fly-earrings.cyclic.cloud/images/${img[0]?.path}`}
+                    alt="login"
+                    style={{ width: '50px', height: '50px', display: 'block' }}
+                  />
+                </div>
+              </Grid>
+            ) : null}
+          </Grid>
+          <ConfirmationModal
+            open={openConfirmation}
+            handleClose={() => {
+              setOpenConfirmation(false);
+            }}
+            handleOpenModal={() => handleConfirmation()}
+            type={'DELETE'}
+          />
           <Grid container spacing={2}>
             <Grid item xs={12} container justifyContent="center">
               <Button variant="contained" style={{ marginRight: 10 }} onClick={handleSubmit(onSubmit)}>
-                Save
+                {isEdit ? 'Update' : 'Save'}
               </Button>
               <Button
                 onClick={() => {

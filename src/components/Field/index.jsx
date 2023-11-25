@@ -5,6 +5,7 @@ import {
   AutocompleteField,
   AutocompleteMultipleField,
   CheckboxField,
+  DatePickerField,
   RadioGroupField,
   SelectField,
   TextAreaField,
@@ -19,6 +20,7 @@ const field = {
   autoComplete: AutocompleteField,
   textarea: TextAreaField,
   multiselect: AutocompleteMultipleField,
+  date: DatePickerField,
 };
 function Fields(props) {
   const { fields, formControl, index, isEdit } = props;

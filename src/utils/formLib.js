@@ -11,12 +11,16 @@ import {
   InputLabel,
   MenuItem,
   FormHelperText,
+  FormLabel,
 } from '@mui/material';
 import { TextareaAutosize as BaseTextareaAutosize } from '@mui/base/TextareaAutosize';
 import PropTypes from 'prop-types';
 import { styled } from '@mui/system';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -163,19 +167,29 @@ CheckboxField.propTypes = {
 
 // Radio Group
 const RadioGroupField = React.forwardRef(({ label, error, required, helperText, options, ...props }, ref) => (
-  <RadioGroup
-    inputRef={ref}
-    aria-label={label}
-    name={label}
-    error={error}
-    required={required}
-    helperText={helperText}
-    {...props}
-  >
-    {options.map((option) => (
-      <FormControlLabel key={option.value} value={option.value} control={<Radio />} label={option.label} />
-    ))}
-  </RadioGroup>
+  <FormControl error={error}>
+    <FormLabel>{label}</FormLabel>
+    <RadioGroup
+      row
+      inputRef={ref}
+      aria-label={label}
+      name={label}
+      error={error}
+      required={required}
+      helperText={helperText}
+      {...props}
+    >
+      {options.map((option) => (
+        <FormControlLabel
+          key={option.value}
+          value={option.value}
+          control={<Radio color="primary" size="small" />}
+          label={option.label}
+        />
+      ))}
+    </RadioGroup>
+    <FormHelperText>{helperText}</FormHelperText>
+  </FormControl>
 ));
 
 RadioGroupField.propTypes = {
@@ -193,22 +207,20 @@ RadioGroupField.propTypes = {
 
 // Textarea
 const TextAreaField = React.forwardRef(({ label, error, required, helperText, ...props }, ref) => (
-  <>
-    <FormControl fullWidth error={error}>
-      <TextareaAutosize
-        maxRows={4}
-        minRows={4}
-        ref={ref}
-        placeholder={label}
-        required={required}
-        {...props}
-        style={{
-          borderColor: error ? 'red' : 'initial',
-        }}
-      />
-      <FormHelperText>{helperText}</FormHelperText>
-    </FormControl>
-  </>
+  <FormControl fullWidth error={error}>
+    <TextareaAutosize
+      maxRows={4}
+      minRows={4}
+      ref={ref}
+      placeholder={label}
+      required={required}
+      {...props}
+      style={{
+        borderColor: error ? 'red' : 'initial',
+      }}
+    />
+    <FormHelperText>{helperText}</FormHelperText>
+  </FormControl>
 ));
 
 TextAreaField.propTypes = {
@@ -254,6 +266,30 @@ AutocompleteMultipleField.propTypes = {
   ).isRequired,
 };
 
+const DatePickerField = React.forwardRef(({ label, error, helperText, ...props }, ref) => (
+  <FormControl fullWidth error={error}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DatePicker
+        onChange={props.onChange}
+        inputRef={ref}
+        label={label}
+        format="DD/MM/YYYY"
+        defaultValue={props.value ? dayjs(props.value) : undefined}
+      />
+    </LocalizationProvider>
+    <FormHelperText>{helperText}</FormHelperText>
+  </FormControl>
+));
+
+DatePickerField.propTypes = {
+  label: PropTypes.string.isRequired,
+  error: PropTypes.bool,
+  required: PropTypes.bool,
+  helperText: PropTypes.string,
+  onChange: PropTypes.any,
+  value: PropTypes.any,
+};
+
 export {
   Textfield,
   SelectField,
@@ -262,4 +298,5 @@ export {
   RadioGroupField,
   TextAreaField,
   AutocompleteMultipleField,
+  DatePickerField,
 };
