@@ -10,6 +10,10 @@ export const fetchProducts = createAsyncThunk('products/fetch', async (data) => 
   const res = await ProductService.fetchProducts(data);
   return res.data;
 });
+export const fetchProductImg = createAsyncThunk('products/fetchImg', async (data) => {
+  const res = await ProductService.fetchProductImg(data);
+  return res.data;
+});
 export const uploadImageApi = createAsyncThunk('products/imgUpload', async (data) => {
   const res = await ProductService.uploadImg(data);
   return res.data;

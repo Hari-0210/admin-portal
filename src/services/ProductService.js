@@ -7,10 +7,12 @@ const uploadImg = (data) =>
       'Content-Type': 'multipart/form-data',
     },
   });
+const fetchProductImg = (data) => http.post('/product/img', data);
 
 const ProductService = {
   fetchProducts,
   uploadImg,
+  fetchProductImg,
 };
 
 export default ProductService;

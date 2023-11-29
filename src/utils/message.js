@@ -13,4 +13,7 @@ export const FormLabel = {
   businessName: 'Business Name',
   businessType: 'Business Type',
   mobile: 'Mobile Number',
+  name: 'Name',
+  address: 'Address',
+  insta: 'Instagram Id',
 };

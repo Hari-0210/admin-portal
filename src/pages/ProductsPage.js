@@ -31,7 +31,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { Textfield } from '../utils/formLib';
 import { useSnackbar } from '../utils/CommonSnack';
-import { fetchProducts, uploadImageApi } from '../slices/product';
+import { fetchProductImg, fetchProducts, uploadImageApi } from '../slices/product';
 import { getUserDetails, makePayload } from '../utils/utility';
 import MuiTable from '../components/table/Table';
 import GenericDialog from '../components/Dialog';
@@ -58,6 +58,7 @@ function ProductsPage(props) {
   const { setLoading } = props;
   const [products, setProducts] = useState([]);
   const [img, setImg] = useState([]);
+  const [imgData, setImgData] = useState('');
   const [category, setcategory] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -149,8 +150,6 @@ function ProductsPage(props) {
   const data = products;
 
   const handleOpenMenu = (event, attributeKey, attributeValue) => {
-    console.log(attributeKey);
-    console.log(attributeValue);
     setEditAttributeKey({ key: attributeKey });
     setEditAttribute({ ...attributeValue });
     setOpen(event.currentTarget);
@@ -167,6 +166,7 @@ function ProductsPage(props) {
     setAttributeData({});
     combinations = [];
     setImg([]);
+    setImgData('');
   };
   const actions = ({ row }) => (
     <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: '8px' }}>
@@ -180,57 +180,76 @@ function ProductsPage(props) {
       </IconButton>
     </Box>
   );
-  const handleEdit = (data) => {
-    setIsEdit(true);
-    reset(data);
-    const att = data.attributes;
-    const result = Object.keys(att).reduce((acc, key) => {
+  const extractAttributes = (data) =>
+    Object.keys(data.attributes).reduce((acc, key) => {
       const parts = key.split(', ').map((part) => part.split(' - '));
 
       parts.forEach((element) => {
         let property;
         let value;
 
-        if (element.length === 3) {
-          [, property, value] = element;
-        } else {
-          [property, value] = element;
-        }
+        if (element.length === 3) [, property, value] = element;
+        else [property, value] = element;
 
         if (property !== 'quantity' && property !== 'sellingPrice') {
-          if (!acc[property]) {
-            acc[property] = [];
-          }
-          if (!acc[property].includes(value)) {
-            acc[property].push(value);
-          }
+          if (!acc[property]) acc[property] = [];
+          if (!acc[property].includes(value)) acc[property].push(value);
         }
       });
 
       return acc;
     }, {});
-    const dynamicArray = Object.entries(result).map(([property, values]) => ({ [property]: values }));
-    const res = dynamicArray.reduce((acc, item, index) => {
-      const key = `attribute ${index + 1}`;
-      const name = Object.keys(item)[0];
-      const options = item[name];
 
-      acc[key] = {
+  const formatAttributes = (attributes) =>
+    Object.entries(attributes).map(([property, values], index) => ({
+      [`attribute ${index + 1}`]: {
         attributes: {
           title: {
-            name,
-            options: options.join(','),
+            name: property,
+            options: values.join(','),
           },
         },
-      };
+      },
+    }));
 
-      return acc;
-    }, {});
-    setAttributeData({ ...res });
-    resetAttribute({ ...att });
-    setImg([...data.img].map((e) => ({ path: e })));
+  /**
+   * Handles the edit functionality for a product.
+   * Sets the component state and prepares data for editing.
+   * @param {Object} data - The data of the product being edited.
+   */
+  const handleEdit = (data) => {
+    setIsEdit(true);
+    reset(data);
+    // Extract and format attributes data for display in the form
+    const attributes = extractAttributes(data);
+    const formattedAttributes = formatAttributes(attributes);
+
+    setAttributeData({ ...formattedAttributes.reduce((acc, item) => ({ ...acc, ...item }), {}) });
+    resetAttribute({ ...data.attributes });
+    getImg(data.img);
+    setImg(data.img.map((e) => ({ path: e })));
     setShowForm(true);
   };
+
+  const getImg = async (data) => {
+    const payload = {
+      storeId: getUserDetails().storeid,
+      fileName: data[0],
+    };
+    dispatch(fetchProductImg(payload))
+      .unwrap()
+      .then((data) => {
+        const imageBuffer = new Uint8Array(data.data.image.data);
+        const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
+        const base64String = URL.createObjectURL(blob);
+        setImgData(base64String);
+      })
+      .catch((e) => {
+        console.log(e);
+        showSnackbar(e.message, 'error');
+      });
+  };
+
   const getCategory = async () => {
     setLoading(true);
     try {
@@ -324,10 +343,12 @@ function ProductsPage(props) {
   const uploadImage = (file) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('storeId', getUserDetails().storeid);
     dispatch(uploadImageApi(formData))
       .unwrap()
       .then((data) => {
         setImg([{ ...data.data }]);
+        getImg([data.data.path]);
         showSnackbar(data.message, 'success');
       })
       .catch((e) => {
@@ -372,6 +393,11 @@ function ProductsPage(props) {
   const handleConfirmation = () => {
     setOpenConfirmation(false);
   };
+
+  const handleClose = () => {
+    setShowForm(false);
+    setImgData('');
+  };
   return (
     <>
       <Helmet>
@@ -393,7 +419,7 @@ function ProductsPage(props) {
       ) : (
         <Container>
           <Typography variant="h4" sx={{ mb: 2 }}>
-            <ArrowBackIcon onClick={() => setShowForm(false)} sx={{ mr: '8px', mt: '5px' }} />
+            <ArrowBackIcon onClick={() => handleClose()} sx={{ mr: '8px', mt: '5px' }} />
             {isEdit ? 'Update' : 'Add'} Product
           </Typography>
 
@@ -658,11 +684,9 @@ function ProductsPage(props) {
                     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                   }}
                 >
-                  <img
-                    src={`https://hungry-fly-earrings.cyclic.cloud/images/${img[0]?.path}`}
-                    alt="login"
-                    style={{ width: '50px', height: '50px', display: 'block' }}
-                  />
+                  {imgData ? (
+                    <img src={imgData} alt="login" style={{ width: '50px', height: '50px', display: 'block' }} />
+                  ) : null}
                 </div>
               </Grid>
             ) : null}
@@ -682,7 +706,7 @@ function ProductsPage(props) {
               </Button>
               <Button
                 onClick={() => {
-                  setShowForm(false);
+                  handleClose();
                 }}
                 variant="outlined"
                 color="inherit"
