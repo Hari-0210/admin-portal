@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   TextField,
   Select,
@@ -231,27 +231,30 @@ TextAreaField.propTypes = {
 };
 
 // Autocomplete
-const AutocompleteMultipleField = React.forwardRef(({ label, error, required, helperText, options, ...props }, ref) => (
-  <Autocomplete
-    multiple
-    inputRef={ref}
-    options={options}
-    disableCloseOnSelect
-    limitTags={1}
-    value={undefined}
-    getOptionLabel={(option) => option.label}
-    renderOption={(props, option, { selected }) => (
-      <li {...props}>
-        <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
-        {option.label}
-      </li>
-    )}
-    renderInput={(params) => (
-      <TextField {...params} label={label} error={error} required={required} helperText={helperText} />
-    )}
-    {...props}
-  />
-));
+const AutocompleteMultipleField = React.forwardRef(({ label, error, required, helperText, options, ...props }, ref) => {
+  console.log();
+
+  return (
+    <Autocomplete
+      multiple
+      inputRef={ref}
+      options={options}
+      disableCloseOnSelect
+      limitTags={1}
+      getOptionLabel={(option) => option.label}
+      renderOption={(props, option, { selected }) => (
+        <li {...props}>
+          <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected} />
+          {option.label}
+        </li>
+      )}
+      renderInput={(params) => (
+        <TextField {...params} label={label} error={error} required={required} helperText={helperText} />
+      )}
+      // {...props}
+    />
+  );
+});
 
 AutocompleteMultipleField.propTypes = {
   label: PropTypes.string.isRequired,
@@ -264,6 +267,7 @@ AutocompleteMultipleField.propTypes = {
       label: PropTypes.string.isRequired,
     })
   ).isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
 const DatePickerField = React.forwardRef(({ label, error, helperText, ...props }, ref) => (

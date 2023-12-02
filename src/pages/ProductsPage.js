@@ -390,8 +390,29 @@ function ProductsPage(props) {
     return resultCombinations;
   }
   let combinations = generateCombinations(attributeData);
-  const handleConfirmation = () => {
+  const handleConfirmation = async () => {
     setOpenConfirmation(false);
+
+    // Your logic to delete the attribute goes here
+    try {
+      // Perform the deletion API call or any other logic
+      // You might need to pass the attribute key or some identifier to the API
+      // For example, you could pass editAttributeKey.key to identify the attribute
+      // const response = await deleteAttributeFunction(editAttributeKey.key);
+
+      // Assuming a successful response means the deletion was successful
+      // Update the attributeData state to reflect the deletion
+      setAttributeData((prevData) => {
+        const newData = { ...prevData };
+        delete newData[editAttributeKey.key];
+        return newData;
+      });
+      handleCloseMenu();
+      showSnackbar('Attribute deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting attribute:', error);
+      showSnackbar('Failed to delete attribute', 'error');
+    }
   };
 
   const handleClose = () => {
