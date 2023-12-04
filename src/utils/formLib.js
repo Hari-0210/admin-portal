@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   TextField,
   Select,
@@ -251,7 +251,7 @@ const AutocompleteMultipleField = React.forwardRef(
       renderInput={(params) => (
         <TextField {...params} label={label} error={error} required={required} helperText={helperText} />
       )}
-      // {...props}
+      {...props}
     />
   )
 );
@@ -268,6 +268,8 @@ AutocompleteMultipleField.propTypes = {
     })
   ).isRequired,
   onChange: PropTypes.func.isRequired,
+  name: PropTypes.any,
+  value: PropTypes.any,
 };
 
 const DatePickerField = React.forwardRef(({ label, error, helperText, ...props }, ref) => (
